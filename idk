@@ -1,2 +1,5 @@
 print("Hi git")
 print("a  ver")
+
+apple=input("que onda?")
+print(apple)
