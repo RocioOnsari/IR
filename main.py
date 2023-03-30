@@ -5,82 +5,90 @@ import plotly.express as px
 from scipy.optimize import curve_fit
 import plotly.graph_objects as go
 
-#We define a function to obtain the m and b values of a linear function
+
+# We define a function to obtain the m and b values of a linear function
 def coefbringer(plot):
     results = px.get_trendline_results(plot)
+    # Plotly also calculates trend-line coefficients
     coef = results.iloc[0]["px_fit_results"].params
     print(f"Coef: {coef}")
-    results = results.iloc[0]["px_fit_results"].summary()
     st.caption(f"Trendline:")
     st.latex(f" y= {coef[1]}*x + {coef[0]} ")
     return coef
 
 
-#We calculate the trendline intersection with the y-axis
+# We calculate the trendline intersection with the y-axis
 def ogipcalc(coeff) -> float:
     ogipc = -coeff[0] / coeff[1]
     st.subheader(f"OGIP is: {ogipc}")
     return ogipc
 
 
-
-#We calculate the x value when Xsamaniego=1
-def ogipcalcpower(coeff)-> float:
+# We calculate the x value when Xsamaniego=1
+def ogipcalcpower(coeff) -> float:
     # y = a * x ** b
-    ogippower = 10**((math.log10(1)-math.log10(coeff[0]))/(coeff[1]))
+    ogippower = 10 ** ((math.log10(1) - math.log10(coeff[0])) / (coeff[1]))
     st.subheader(f"OGIP is: {ogippower}")
     return ogippower
 
-#error calculation between OGIP given and calculated
+
+# error calculation between OGIP given and calculated
 def errcalc(ogipgiven, ogipcalculated):
     error = (ogipcalculated - ogipgiven) / ogipgiven * 100
     st.markdown(f"The difference between the OGIP given and the calculated is **:red[{error}]** %")
 
-#P/Z Calculation and graph
+
+# P/Z Calculation and graph
 def pzmethod(df):
     st.write('Remember, in this method its assumed We=0', )
     df["P/Z"] = df["Presion"] / df["Z"]
     st.table(df)
     normalgraph = px.scatter(df, x=df["Gp (x109 cf)"], y=df["P/Z"], trendline="ols",
-                         trendline_color_override="aquamarine")
+                             trendline_color_override="aquamarine")
     st.plotly_chart(normalgraph)
     return normalgraph
-#P/Z and X samaniego calculation.
+
+
+# P/Z and X samaniego calculation.
 def samaniegomethod(df):
     st.write('Remember, in this method its assumed We=0', )
     df["P/Z"] = df["Presion"] / df["Z"]
-    df["X samaniego"] = 1-df["P/Z"]/df["P/Z"][0]
+    df["X samaniego"] = 1 - df["P/Z"] / df["P/Z"][0]
 
     x = df["Gp (x109 cf)"]
     y = df["X samaniego"]
-    #Creation of a power trendlinw
-    popt,pcov = curve_fit(lambda fx, a, b: a * fx ** b, x, y)
+    # Creation of a power trendline like excel
+    # https://stackoverflow.com/questions/32121877/how-do-i-replicate-excels-power-trendline-in-python
+    popt, pcov = curve_fit(lambda fx, a, b: a * fx ** b, x, y)
     df["trendpower"] = popt[0] * x ** popt[1]
 
     st.table(df)
     # Group data together
     graph = px.scatter(df, x=df["Gp (x109 cf)"], y=df["X samaniego"], log_x=True, log_y=True)
-    trendpower= px.line(df, x=df["Gp (x109 cf)"], y=df["trendpower"], log_x=True, log_y=True, color_discrete_sequence=["red"])
-    #Plotting the scatter graph and trendline
-    graph2=go.Figure(data=graph.data + trendpower.data)
+    trendpower = px.line(df, x=df["Gp (x109 cf)"], y=df["trendpower"], log_x=True, log_y=True,
+                         color_discrete_sequence=["red"])
+    # Plotting the scatter graph and trendline
+    graph2 = go.Figure(data=graph.data + trendpower.data)
     st.plotly_chart(graph2)
     st.caption(f"Trendline:")
-    st.latex(" y= "+str(popt[0])+"*x^{"+str(popt[1])+"}")
+    st.latex(" y= " + str(popt[0]) + "*x^{" + str(popt[1]) + "}")
     return popt[0], popt[1]
+
 
 def havlenaodehmethod(df):
     st.text("This program is made for Wp=0 for now")
     df["P/Z"] = df["Presion"] / df["Z"]
-    df["F/Eg"] = df["Gp (x109 cf)"]/(1 - df["P/Z"] / df["P/Z"][0])
+    df["F/Eg"] = df["Gp (x109 cf)"] / (1 - df["P/Z"] / df["P/Z"][0])
     st.table(df)
     # Group data together
     graph = px.scatter(df, x=df["Gp (x109 cf)"][1:], y=df["F/Eg"][1:])
-    trend=px.scatter(df, x=df["Gp (x109 cf)"][1:4], y=df["F/Eg"][1:4], trendline="ols",
-                         trendline_color_override="aqua")
+    trend = px.scatter(df, x=df["Gp (x109 cf)"][1:4], y=df["F/Eg"][1:4], trendline="ols",
+                       trendline_color_override="aqua")
     graph2 = go.Figure(data=graph.data + trend.data)
     st.plotly_chart(graph2)
-    coefhyo=coefbringer(trend)
+    coefhyo = coefbringer(trend)
     return coefhyo
+
 
 st.title("Dry Gas")
 
@@ -117,13 +125,13 @@ opt2 = st.selectbox(
 st.write('You selected:', option)
 # P/Z calculation and graph
 if opt2 == "P/Z":
-    graphpz=pzmethod(tp1)
+    graphpz = pzmethod(tp1)
     coeff = coefbringer(graphpz)
     ogipc = ogipcalc(coeff)
     ogip: float = st.number_input('Select volumetric OGIP', value=823)
     errcalc(ogip, ogipc)
-    linear=st.checkbox('Linear function')
-    error=st.checkbox("Error<5%")
+    linear = st.checkbox('Linear function')
+    error = st.checkbox("Error<5%")
     if linear and error:
         st.write("It looks like there is no water entry, please check with Havlena and Odeh method.")
     else:
@@ -133,12 +141,12 @@ if opt2 == "P/Z":
             st.write('The error is too big, check Havlena and Odeh')
 
 if opt2 == "Samaniego":
-    coef=samaniegomethod(tp1)
+    coef = samaniegomethod(tp1)
     ogipcpower = ogipcalcpower(coef)
     ogip: float = st.number_input('Select volumetric OGIP', value=823)
     errcalc(ogip, ogipcpower)
-    linear=st.checkbox('Linear function')
-    error=st.checkbox("Error<5%")
+    linear = st.checkbox('Linear function')
+    error = st.checkbox("Error<5%")
     if linear and error:
         st.write("It looks like there is no water entry, please check with Havlena and Odeh method.")
     else:
@@ -148,13 +156,13 @@ if opt2 == "Samaniego":
             st.write('The error is too big, check Havlena and Odeh')
 
 if opt2 == "Havlena and Odeh":
-    hyo=havlenaodehmethod(tp1)
+    hyo = havlenaodehmethod(tp1)
     ogipc = hyo[0]
     st.subheader(f"OGIP is: {ogipc}")
     ogip: float = st.number_input('Select volumetric OGIP', value=823)
     errcalc(ogip, ogipc)
-    constant=st.checkbox('constant function')
-    error=st.checkbox("Error<5%")
+    constant = st.checkbox('constant function')
+    error = st.checkbox("Error<5%")
     if constant and error:
         st.write("**It looks like there is no water entry!**")
     else:
@@ -162,5 +170,3 @@ if opt2 == "Havlena and Odeh":
             st.write("If not a constant function shown in the graph, then a water entry is present")
         if constant:
             st.write('The error is too big, there must be We')
-
-
