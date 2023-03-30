@@ -170,3 +170,5 @@ if opt2 == "Havlena and Odeh":
             st.write("If not a constant function shown in the graph, then a water entry is present")
         if constant:
             st.write('The error is too big, there must be We')
+
+st.write("Click here to check the code [link](https://github.com/rocioonsari/ir/blob/main/main.py)")
