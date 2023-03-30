@@ -22,6 +22,8 @@ def ogipcalc(coeff) -> float:
     st.subheader(f"OGIP is: {ogipc}")
     return ogipc
 
+
+
 #We calculate the x value when Xsamaniego=1
 def ogipcalcpower(coeff)-> float:
     # y = a * x ** b
@@ -34,7 +36,7 @@ def errcalc(ogipgiven, ogipcalculated):
     error = (ogipcalculated - ogipgiven) / ogipgiven * 100
     st.markdown(f"The difference between the OGIP given and the calculated is **:red[{error}]** %")
 
-
+#P/Z Calculation and graph
 def pzmethod(df):
     st.write('Remember, in this method its assumed We=0', )
     df["P/Z"] = df["Presion"] / df["Z"]
@@ -43,7 +45,7 @@ def pzmethod(df):
                          trendline_color_override="aquamarine")
     st.plotly_chart(normalgraph)
     return normalgraph
-
+#P/Z and X samaniego calculation.
 def samaniegomethod(df):
     st.write('Remember, in this method its assumed We=0', )
     df["P/Z"] = df["Presion"] / df["Z"]
@@ -51,6 +53,7 @@ def samaniegomethod(df):
 
     x = df["Gp (x109 cf)"]
     y = df["X samaniego"]
+    #Creation of a power trendlinw
     popt,pcov = curve_fit(lambda fx, a, b: a * fx ** b, x, y)
     df["trendpower"] = popt[0] * x ** popt[1]
 
@@ -58,6 +61,7 @@ def samaniegomethod(df):
     # Group data together
     graph = px.scatter(df, x=df["Gp (x109 cf)"], y=df["X samaniego"], log_x=True, log_y=True)
     trendpower= px.line(df, x=df["Gp (x109 cf)"], y=df["trendpower"], log_x=True, log_y=True, color_discrete_sequence=["red"])
+    #Plotting the scatter graph and trendline
     graph2=go.Figure(data=graph.data + trendpower.data)
     st.plotly_chart(graph2)
     st.caption(f"Trendline:")
